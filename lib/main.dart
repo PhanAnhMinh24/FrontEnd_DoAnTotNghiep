@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false, // Tắt banner debug
-      title: 'Login Demo',
+      title: 'Đồ án tốt nghiệp',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         fontFamily: 'Roboto', // Thêm font mặc định nếu cần
