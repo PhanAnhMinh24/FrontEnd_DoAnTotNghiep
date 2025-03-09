@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:doantotnghiep/screens/auth/register_screen.dart';
 import 'package:doantotnghiep/screens/auth/forgot_password_screen.dart';
@@ -16,51 +15,11 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
   bool _isLoading = false;
 
-  // Sửa localhost thành 10.0.2.2 để kết nối với server trên Android Emulator
-  final Dio _dio = Dio(BaseOptions(baseUrl: "http://10.0.2.2:8088"));
-
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
-  }
-
-  Future<void> _login() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      Response response = await _dio.post(
-        "/auth-controller/authenticateUser",
-        data: {
-          "username": _usernameController.text.trim(),
-          "password": _passwordController.text.trim(),
-        },
-      );
-
-      if (response.statusCode == 200) {
-        print("Login Success: ${response.data}");
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Đăng nhập thành công!")),
-        );
-      } else {
-        print("Login Failed: ${response.data}");
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Đăng nhập thất bại!")),
-        );
-      }
-    } catch (e) {
-      print("Error: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Có lỗi xảy ra! Kiểm tra lại server.")),
-      );
-    }
-
-    setState(() {
-      _isLoading = false;
-    });
   }
 
   @override
@@ -74,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                "Đăng nhập ứng dụng",
+                "Đăng nhập",
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -158,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _login,
+                  onPressed: _isLoading ? null : () {},
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     elevation: 0,
