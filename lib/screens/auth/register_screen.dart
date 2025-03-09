@@ -1,5 +1,5 @@
+import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -19,7 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _isPasswordVisible = false;
-  File? _avatarImage; // Ảnh đại diện
+  File? _avatarImage;
 
   @override
   void dispose() {
@@ -31,19 +31,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  // Chọn ảnh từ thư viện hoặc chụp ảnh
+  String? _base64Image; // Thêm biến lưu chuỗi Base64
+
   Future<void> _pickImage(ImageSource source) async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: source);
 
     if (image != null) {
+      final File imageFile = File(image.path);
+      final List<int> imageBytes = await imageFile.readAsBytes();
+      final String base64String = base64Encode(imageBytes);
+
       setState(() {
-        _avatarImage = File(image.path);
+        _avatarImage = imageFile;
+        _base64Image = "data:image/png;base64,$base64String"; // Gán Base64 với tiền tố
       });
     }
   }
 
-  // Hiển thị hộp thoại chọn ảnh
   void _showImageSourceDialog() {
     showModalBottomSheet(
       context: context,
@@ -70,42 +75,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // Gửi dữ liệu lên API
   Future<void> _registerUser() async {
     if (_firstNameController.text.isEmpty ||
         _lastNameController.text.isEmpty ||
         _emailController.text.isEmpty ||
         _phoneController.text.isEmpty ||
         _passwordController.text.isEmpty ||
-        _avatarImage == null) {
+        _base64Image == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Vui lòng nhập đầy đủ thông tin và chọn ảnh đại diện!")),
       );
       return;
     }
 
-    var request = http.MultipartRequest(
-      "POST",
-      Uri.parse("http://10.0.2.2:8088/auth/sign-up"),
-    );
+    final Uri url = Uri.parse("http://10.0.2.2:8088/auth/sign-up");
+    final Map<String, String> headers = {"Content-Type": "application/json"};
 
-    request.fields['firstName'] = _firstNameController.text;
-    request.fields['lastName'] = _lastNameController.text;
-    request.fields['email'] = _emailController.text;
-    request.fields['phone'] = _phoneController.text;
-    request.fields['password'] = _passwordController.text;
-
-    request.files.add(await http.MultipartFile.fromPath('avatar', _avatarImage!.path));
+    final Map<String, dynamic> body = {
+      "firstName": _firstNameController.text,
+      "lastName": _lastNameController.text,
+      "email": _emailController.text,
+      "phoneNumber": _phoneController.text,
+      "password": _passwordController.text,
+      "profileImg": _base64Image, // Gửi Base64 thay vì file
+    };
 
     try {
-      var response = await request.send();
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Đăng ký thành công!")),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Đăng ký thất bại, vui lòng thử lại!")),
+          SnackBar(content: Text("Đăng ký thất bại: ${response.body}")),
         );
       }
     } catch (e) {
@@ -114,6 +122,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
     }
   }
+
   Widget _buildTextField(String label, IconData icon, TextEditingController controller, [TextInputType keyboardType = TextInputType.text]) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -128,7 +137,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -152,7 +160,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 30),
 
-              // Ảnh đại diện
               GestureDetector(
                 onTap: _showImageSourceDialog,
                 child: Stack(
@@ -176,12 +183,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 20),
 
-                _buildTextField("First Name", Icons.person, _firstNameController),
-                _buildTextField("Last Name", Icons.person, _lastNameController),
-                _buildTextField("Email", Icons.email, _emailController, TextInputType.emailAddress),
-                _buildTextField("Phone Number", Icons.phone, _phoneController, TextInputType.phone),
+              _buildTextField("First Name", Icons.person, _firstNameController),
+              _buildTextField("Last Name", Icons.person, _lastNameController),
+              _buildTextField("Email", Icons.email, _emailController, TextInputType.emailAddress),
+              _buildTextField("Phone Number", Icons.phone, _phoneController, TextInputType.phone),
 
-              // Trường nhập mật khẩu
               TextField(
                 controller: _passwordController,
                 decoration: InputDecoration(
@@ -197,7 +203,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Nút đăng ký
               ElevatedButton(
                 onPressed: _registerUser,
                 style: ElevatedButton.styleFrom(
@@ -206,19 +211,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: const Text("Register", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-              ),
-              const SizedBox(height: 20),
-
-              // Liên kết quay lại màn hình đăng nhập
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("Already have an account?", style: TextStyle(color: Colors.grey, fontSize: 14)),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text("Login", style: TextStyle(color: Colors.blueAccent, fontSize: 14, fontWeight: FontWeight.bold)),
-                  ),
-                ],
               ),
             ],
           ),

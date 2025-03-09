@@ -1,0 +1,2 @@
+C:/DoAnTotNghiep2025/FrontEnd_DoAnTotNghiep/android/app/.cxx/Debug/2z5i6l20/x86/CMakeFiles/edit_cache.dir
+C:/DoAnTotNghiep2025/FrontEnd_DoAnTotNghiep/android/app/.cxx/Debug/2z5i6l20/x86/CMakeFiles/rebuild_cache.dir
