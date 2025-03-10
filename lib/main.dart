@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'screens/auth/login_screen.dart'; // Import file login_screen.dart
 import 'screens/auth/register_screen.dart'; // Import file register_screen.dart
 import 'screens/auth/forgot_password_screen.dart'; // Import file forgot_password_screen.dart
+import 'screens/authentication_code/authentication_code_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -30,6 +31,11 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(), // Định nghĩa route cho LoginScreen
         '/register': (context) => const RegisterScreen(), // Định nghĩa route cho RegisterScreen
         '/forgot_password': (context) => const ForgotPasswordScreen(), // Định nghĩa route cho ForgotPasswordScreen
+        '/authentication_code': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as String;
+          return AuthenticationCodeScreen(email: args);
+        },
+        // Định nghĩa route cho AuthenticationCodeScreen'
       },
     );
   }
