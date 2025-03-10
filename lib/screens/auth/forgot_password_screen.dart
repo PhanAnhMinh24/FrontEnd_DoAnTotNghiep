@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:doantotnghiep/screens/auth/reset_password.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -11,8 +13,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController _emailController = TextEditingController();
   bool _isLoading = false;
 
-  void _resetPassword() async {
-    if (_emailController.text.isEmpty || !_emailController.text.contains('@')) {
+  Future<void> _resetPassword() async {
+    String email = _emailController.text.trim();
+
+    if (email.isEmpty || !email.contains('@')) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Vui lòng nhập email hợp lệ!")),
       );
@@ -21,14 +25,39 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     setState(() => _isLoading = true);
 
-    await Future.delayed(const Duration(seconds: 2)); // Giả lập API
+    try {
+      final Uri apiUrl = Uri.parse("http://10.0.2.2:8088/otp/send-code?email=$email");
 
-    setState(() => _isLoading = false);
+      final response = await http.get(
+        apiUrl,
+        headers: {"Content-Type": "application/json"},
+      );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Liên kết đặt lại mật khẩu đã được gửi!")),
-    );
-    Navigator.pop(context);
+      setState(() => _isLoading = false);
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Mã OTP đã được gửi đến email của bạn!")),
+        );
+
+        // Chuyển sang màn hình đặt lại mật khẩu
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ResetPasswordScreen(email: email),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Không thể gửi mã OTP. Vui lòng thử lại!")),
+        );
+      }
+    } catch (error) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Lỗi kết nối: $error")),
+      );
+    }
   }
 
   @override
@@ -41,7 +70,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Icon & tiêu đề
               const Icon(Icons.lock_reset, size: 100, color: Colors.blueAccent),
               const SizedBox(height: 20),
               const Text(
@@ -50,13 +78,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
               const SizedBox(height: 10),
               const Text(
-                "Nhập email của bạn để nhận liên kết đặt lại mật khẩu",
+                "Nhập email của bạn để nhận mã OTP",
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
               const SizedBox(height: 30),
-
-              // Trường nhập email
               TextField(
                 controller: _emailController,
                 decoration: InputDecoration(
@@ -67,8 +93,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 20),
-
-              // Nút đặt lại mật khẩu
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -89,13 +113,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Gửi yêu cầu", style: TextStyle(fontSize: 18, color: Colors.white)),
+                      : const Text("Gửi mã OTP", style: TextStyle(fontSize: 18, color: Colors.white)),
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // Nút quay lại đăng nhập
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text("Quay lại đăng nhập", style: TextStyle(color: Colors.blueAccent, fontSize: 16)),
