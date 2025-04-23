@@ -31,45 +31,39 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    const String apiUrl = "http://10.0.2.2:8088/auth/sign-in"; // Máy ảo Android
-
-    Map<String, String> headers = {
-      "Content-Type": "application/json",
-    };
-
-    Map<String, String> body = {
-      "email": _emailController.text,
-      "password": _passwordController.text,
-    };
+    const String apiUrl = "http://10.0.2.2:8088/auth/sign-in";
 
     try {
       final response = await http.post(
         Uri.parse(apiUrl),
-        headers: headers,
-        body: jsonEncode(body),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "email": _emailController.text.trim(),
+          "password": _passwordController.text.trim(),
+        }),
       );
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(utf8.decode(response.bodyBytes)); // Giải mã UTF-8
+      final responseData = jsonDecode(utf8.decode(response.bodyBytes));
+
+      if (response.statusCode == 200 && responseData["results"] != null) {
         final user = responseData["results"];
 
-        // Lưu vào SharedPreferences
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setString("token", user["token"]);
-        await prefs.setString("firstName", utf8.decode(utf8.encode(user["firstName"])));
-        await prefs.setString("lastName", utf8.decode(utf8.encode(user["lastName"])));
+        await prefs.setString("firstName", user["firstName"] ?? "");
+        await prefs.setString("lastName", user["lastName"] ?? "");
+        await prefs.setString("email", user["email"] ?? "");
+        await prefs.setString("image", user["image"] ?? ""); // ảnh có thể null
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Đăng nhập thành công!")),
         );
 
-        // Chuyển sang HomePage
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomePageScreen()),
         );
       } else {
-        final responseData = jsonDecode(utf8.decode(response.bodyBytes));
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(responseData["message"] ?? "Đăng nhập thất bại!")),
         );
@@ -170,10 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [
-                      Colors.blueAccent,
-                      Color.fromARGB(255, 0, 145, 234),
-                    ],
+                    colors: [Colors.blueAccent, Color.fromARGB(255, 0, 145, 234)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),

@@ -3,6 +3,8 @@ import 'screens/auth/login_screen.dart'; // Import file login_screen.dart
 import 'screens/auth/register_screen.dart'; // Import file register_screen.dart
 import 'screens/auth/forgot_password_screen.dart'; // Import file forgot_password_screen.dart
 import 'screens/authentication_code/authentication_code_screen.dart';
+import 'screens/notification_list/notification_friend_list.dart';
+import 'screens/signal/signal_creation_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -36,6 +38,8 @@ class MyApp extends StatelessWidget {
           return AuthenticationCodeScreen(email: args);
         },
         // Định nghĩa route cho AuthenticationCodeScreen'
+        '/notification_friend_list': (context) => const NotificationFriendListScreen(),
+        '/signal_creation': (_) => const SignalCreationScreen(),
       },
     );
   }
