@@ -4,16 +4,18 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:doantotnghiep/screens/auth/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-
+import 'dart:ui';
+import 'package:doantotnghiep/screens/personal_page/personal_page_screen.dart';
+import 'package:doantotnghiep/screens/friends/friends_list_screen.dart';
+import 'package:doantotnghiep/screens/signal/signal_creation_screen.dart';
+import 'package:doantotnghiep/screens/signal/list_sos_screen.dart';
 
 class CupertinoAppBar extends StatefulWidget implements PreferredSizeWidget {
-  final VoidCallback? onMenuPressed;
   final VoidCallback? onNotificationPressed;
   final VoidCallback? onLogoutPressed;
 
   const CupertinoAppBar({
     super.key,
-    this.onMenuPressed,
     this.onNotificationPressed,
     this.onLogoutPressed,
   });
@@ -50,12 +52,11 @@ class _CupertinoAppBarState extends State<CupertinoAppBar> {
     print("Tên hiển thị: $_userName"); // Kiểm tra log
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: CupertinoColors.systemBlue,
+        color: Colors.white, // Nền trắng
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(15),
           bottomRight: Radius.circular(15),
@@ -69,15 +70,15 @@ class _CupertinoAppBarState extends State<CupertinoAppBar> {
         ],
       ),
       child: CupertinoNavigationBar(
-        backgroundColor: CupertinoColors.systemBlue.withOpacity(0.95),
+        backgroundColor: Colors.white, // AppBar nền trắng
         middle: Text(
           "Chào, $_userName!",
-          style: const TextStyle(color: Colors.white, fontSize: 18),
+          style: const TextStyle(color: Colors.blueAccent, fontSize: 18),
         ),
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
-          child: const Icon(CupertinoIcons.bars, color: Colors.white, size: 26),
-          onPressed: widget.onMenuPressed,
+          child: const Icon(LucideIcons.menu, color: Colors.blueAccent, size: 26),
+          onPressed: () => _showMenuOptions(context),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -90,13 +91,90 @@ class _CupertinoAppBarState extends State<CupertinoAppBar> {
     );
   }
 
+  void _showMenuOptions(BuildContext context) {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // Hiệu ứng kính mờ
+            child: Container(
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemBackground.withOpacity(0.7),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CupertinoListTile(
+                    leading: const Icon(CupertinoIcons.person, color: CupertinoColors.activeBlue),
+                    title: const Text("Hồ sơ cá nhân"),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(builder: (context) => PersonalPageScreen()),
+                      );
+                    },
+                  ),
+                  CupertinoListTile(
+                    leading: const Icon(CupertinoIcons.group, color: CupertinoColors.activeBlue),
+                    title: const Text("Danh sách bạn bè"),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(builder: (context) => FriendsListScreen()),
+                      );
+                    },
+                  ),
+                  CupertinoListTile(
+                    leading: const Icon(LucideIcons.alertTriangle, color: CupertinoColors.activeBlue),
+                    title: const Text("Tạo tín hiệu"),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(builder: (context) => SignalCreationScreen()),
+                      );
+                    },
+                  ),
+                  // Mục Danh sách tín hiệu đã tạo
+                  CupertinoListTile(
+                    leading: const Icon(LucideIcons.listEnd, color: CupertinoColors.activeBlue),
+                    title: const Text("Danh sách tín hiệu đã tạo"),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(builder: (context) => CreatedSignalsListScreen()),
+                      );
+                    },
+                  ),
+                  const Divider(), // Đường kẻ ngăn cách
+                  CupertinoListTile(
+                    leading: const Icon(CupertinoIcons.clear, color: CupertinoColors.destructiveRed),
+                    title: const Text("Đóng", style: TextStyle(color: CupertinoColors.destructiveRed)),
+                    onTap: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   /// **Nút thông báo**
   Widget _buildNotificationButton(BuildContext context) {
     return CupertinoButton(
       padding: EdgeInsets.zero,
       child: Stack(
         children: [
-          const Icon(CupertinoIcons.bell, color: Colors.white, size: 26),
+          const Icon(LucideIcons.bell, color: Colors.blueAccent, size: 26),
           Positioned(
             right: 0,
             top: 0,
@@ -134,7 +212,7 @@ class _CupertinoAppBarState extends State<CupertinoAppBar> {
   Widget _buildLogoutButton(BuildContext context) {
     return CupertinoButton(
       padding: EdgeInsets.zero,
-      child: const Icon(LucideIcons.logOut, color: Colors.white, size: 26),
+      child: const Icon(LucideIcons.logOut, color: Colors.blueAccent, size: 26),
       onPressed: widget.onLogoutPressed ?? () {
         showCupertinoDialog(
           context: context,
