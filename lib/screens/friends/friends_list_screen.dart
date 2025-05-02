@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';import 'package:doantotnghiep/global/global.dart';
+
 
 class FriendsListScreen extends StatefulWidget {
   const FriendsListScreen({super.key});
@@ -49,6 +50,7 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
         headers: {
           "Authorization": "Bearer $token",
           "Content-Type": "application/json",
+          "X_token": globalFcmToken ?? '',
         },
       );
       if (response.statusCode == 200) {
@@ -98,6 +100,7 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
       final response = await http.get(url, headers: {
         "Authorization": "Bearer $token",
         "Content-Type": "application/json",
+        "X_token": globalFcmToken ?? '',
       });
       if (response.statusCode == 200) {
         var jsonData = jsonDecode(utf8.decode(response.bodyBytes));
@@ -137,6 +140,7 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
       final response = await http.get(url, headers: {
         "Authorization": "Bearer $token",
         "Content-Type": "application/json",
+        "X_token": globalFcmToken ?? '',
       });
       if (response.statusCode == 200) {
         var jsonData = jsonDecode(utf8.decode(response.bodyBytes));
@@ -371,6 +375,7 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
         headers: {
           "Authorization": "Bearer $token",
           "Content-Type": "application/json",
+          "X_token": globalFcmToken ?? '',
         },
         body: body,
       );

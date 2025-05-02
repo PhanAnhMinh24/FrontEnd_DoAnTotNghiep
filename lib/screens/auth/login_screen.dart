@@ -5,6 +5,7 @@ import 'package:doantotnghiep/screens/homepage/homepage_screen.dart';
 import 'package:doantotnghiep/screens/auth/register_screen.dart';
 import 'package:doantotnghiep/screens/auth/forgot_password_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:doantotnghiep/global/global.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -36,7 +37,10 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final response = await http.post(
         Uri.parse(apiUrl),
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "X_token": globalFcmToken ?? '', // lấy token từ biến global
+        },
         body: jsonEncode({
           "email": _emailController.text.trim(),
           "password": _passwordController.text.trim(),

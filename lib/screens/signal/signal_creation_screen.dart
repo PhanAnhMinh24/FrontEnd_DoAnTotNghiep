@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:doantotnghiep/global/global.dart';
 
 class SignalCreationScreen extends StatefulWidget {
   const SignalCreationScreen({Key? key}) : super(key: key);
@@ -201,7 +202,8 @@ class _SignalCreationScreenState extends State<SignalCreationScreen> {
       });
       final response = await http.post(uri, headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer $_token"
+        "Authorization": "Bearer $_token",
+        "X_token": globalFcmToken ?? '',
       }, body: body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:doantotnghiep/screens/auth/reset_password.dart';
+import 'package:doantotnghiep/global/global.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -30,7 +31,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
       final response = await http.get(
         apiUrl,
-        headers: {"Content-Type": "application/json"},
+          headers: {
+            "Content-Type": "application/json",
+            "X_token": globalFcmToken ?? '', // lấy token từ biến global
+          }
       );
 
       setState(() => _isLoading = false);

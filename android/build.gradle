@@ -1,8 +1,28 @@
+buildscript {
+    ext.kotlin_version = '1.8.10'
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.3.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.google.gms:google-services:4.4.2' // <-- bản 4.4.0 này là được rồi
+    }
+}
+
+// ❌ Xoá khối plugins này (không được dùng ở đây):
+// plugins {
+//     id("com.google.gms.google-services") version "4.4.2" apply false
+// }
+
 allprojects {
     repositories {
         google()
         mavenCentral()
     }
+
 }
 
 rootProject.buildDir = "../build"
@@ -16,3 +36,4 @@ subprojects {
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
+

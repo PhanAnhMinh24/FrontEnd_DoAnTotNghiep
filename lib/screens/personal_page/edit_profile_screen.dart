@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:doantotnghiep/global/global.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -39,7 +40,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       try {
         final response = await http.get(
           Uri.parse("http://10.0.2.2:8088/api/profile"),
-          headers: {"Authorization": "Bearer $token"},
+          headers: {"Authorization": "Bearer $token","X_token": globalFcmToken ?? '',},
         );
 
         if (response.statusCode == 200) {

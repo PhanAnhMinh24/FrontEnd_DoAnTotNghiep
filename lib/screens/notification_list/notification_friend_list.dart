@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:doantotnghiep/global/global.dart';
 
 class NotificationFriendListScreen extends StatefulWidget {
   const NotificationFriendListScreen({Key? key}) : super(key: key);
@@ -55,7 +56,9 @@ class _NotificationFriendListScreenState extends State<NotificationFriendListScr
     try {
       final resp = await http.get(
         Uri.parse('http://10.0.2.2:8088/api/friends/list'),
-        headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+        headers: {'Authorization': 'Bearer $token',
+                  'Content-Type': 'application/json',
+                  "X_token": globalFcmToken ?? '',},
       );
       if (resp.statusCode == 200) {
         final list = jsonDecode(utf8.decode(resp.bodyBytes));
@@ -194,7 +197,7 @@ class _NotificationFriendListScreenState extends State<NotificationFriendListScr
     try {
       final resp = await http.post(
         Uri.parse('http://10.0.2.2:8088/api/personal_sos_alerts'),
-        headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+        headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json',"X_token": globalFcmToken ?? '',},
         body: jsonEncode({'sosAlertId': sosAlertId, 'friendIds': friendIds}),
       );
       if (resp.statusCode == 200 || resp.statusCode == 201) {

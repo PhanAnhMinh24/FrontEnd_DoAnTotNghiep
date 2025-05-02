@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:doantotnghiep/screens/authentication_code/authentication_code_screen.dart';
+import 'package:doantotnghiep/global/global.dart';
 
 
 class RegisterScreen extends StatefulWidget {
@@ -100,7 +101,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       final response = await http.post(
         url,
-        headers: {"Content-Type": "application/json"},
+          headers: {
+            "Content-Type": "application/json",
+            "X_token": globalFcmToken ?? '', // lấy token từ biến global
+          },
         body: jsonEncode(body),
       );
 

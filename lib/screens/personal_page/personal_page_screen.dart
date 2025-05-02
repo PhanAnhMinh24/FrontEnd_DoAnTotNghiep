@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:glassmorphism/glassmorphism.dart';
 import 'package:doantotnghiep/screens/personal_page/edit_profile_screen.dart';
+import 'package:doantotnghiep/global/global.dart';
 
 class PersonalPageScreen extends StatefulWidget {
   const PersonalPageScreen({super.key});
@@ -46,6 +47,7 @@ class _PersonalPageScreenState extends State<PersonalPageScreen> {
         headers: {
           "Authorization": "Bearer $token",
           "Content-Type": "application/json",
+          "X_token": globalFcmToken ?? '',
         },
       );
 
