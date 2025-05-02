@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:doantotnghiep/screens/auth/login_screen.dart'; // Đường dẫn đến màn hình đăng nhập
+import 'package:doantotnghiep/global/global.dart';
 
 class AuthenticationCodeScreen extends StatefulWidget {
   final String email;
@@ -65,7 +66,10 @@ class _AuthenticationCodeScreenState extends State<AuthenticationCodeScreen>
     try {
       final response = await http.post(
         Uri.parse(apiUrl),
-        headers: {"Content-Type": "application/json"},
+          headers: {
+            "Content-Type": "application/json",
+            "X_token": globalFcmToken ?? '', // lấy token từ biến global
+          },
         body: jsonEncode(body),
       );
 

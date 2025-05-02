@@ -5,8 +5,15 @@ import 'screens/auth/forgot_password_screen.dart'; // Import file forgot_passwor
 import 'screens/authentication_code/authentication_code_screen.dart';
 import 'screens/notification_list/notification_friend_list.dart';
 import 'screens/signal/signal_creation_screen.dart';
-
-void main() {
+import 'api/firebase_api.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:doantotnghiep/screens/signal/sos_details.dart';
+import 'package:doantotnghiep/global/global.dart';
+import 'package:doantotnghiep/screens/signal/list_sos_screen.dart';
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  await FirebaseApi().initNotifications();
   runApp(const MyApp());
 }
 
@@ -29,6 +36,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       initialRoute: '/login', // Màn hình khởi đầu
+      navigatorKey: navigatorKey,
       routes: {
         '/login': (context) => const LoginScreen(), // Định nghĩa route cho LoginScreen
         '/register': (context) => const RegisterScreen(), // Định nghĩa route cho RegisterScreen
@@ -39,7 +47,13 @@ class MyApp extends StatelessWidget {
         },
         // Định nghĩa route cho AuthenticationCodeScreen'
         '/notification_friend_list': (context) => const NotificationFriendListScreen(),
+        '/list_sos_screen': (context) => const CreatedSignalsListScreen(),
         '/signal_creation': (_) => const SignalCreationScreen(),
+        '/sos_details': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as int;
+          return SosDetailsScreen(id: args);
+        },
+
       },
     );
   }

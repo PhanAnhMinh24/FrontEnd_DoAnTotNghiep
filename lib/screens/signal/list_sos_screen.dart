@@ -5,6 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import 'package:doantotnghiep/screens/signal/sos_details.dart';
+import 'package:doantotnghiep/global/global.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class CreatedSignalsListScreen extends StatefulWidget {
   const CreatedSignalsListScreen({Key? key}) : super(key: key);
@@ -48,14 +51,18 @@ class _CreatedSignalsListScreenState extends State<CreatedSignalsListScreen> {
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json; charset=utf-8',
+          "X_token": globalFcmToken ?? '',
         },
       );
+
+      debugPrint("Response Status: ${response.statusCode}");
+      debugPrint("Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         String decodedBody = utf8.decode(response.bodyBytes);
         final Map<String, dynamic> data = json.decode(decodedBody);
 
-        debugPrint("JSON results: ${data['results']}");
+        debugPrint("Decoded JSON: $data");
 
         setState(() {
           final results = data['results'] as List<dynamic>?;
@@ -78,95 +85,271 @@ class _CreatedSignalsListScreenState extends State<CreatedSignalsListScreen> {
   }
 
 
+  Future<void> deleteSignal(int id) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString("token");
+    if (token == null) {
+      debugPrint("Bạn chưa đăng nhập!");
+      return;
+    }
+
+    final url = Uri.parse('http://10.0.2.2:8088/api/sos-alerts/$id');
+    try {
+      final response = await http.delete(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json; charset=utf-8',
+          "X_token": globalFcmToken ?? '',
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        debugPrint("Đã xóa tín hiệu $id");
+      } else {
+        debugPrint('Lỗi khi xóa: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Lỗi khi xóa tín hiệu: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final message =
+    ModalRoute.of(context)?.settings.arguments as RemoteMessage?;
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.white,
+      backgroundColor: CupertinoColors.systemGrey6,
       navigationBar: CupertinoNavigationBar(
         middle: Text(
           "Danh sách tín hiệu đã tạo",
-          style: GoogleFonts.poppins(color: CupertinoColors.activeBlue),
+          style: GoogleFonts.poppins(
+            color: CupertinoColors.activeBlue,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
-          child: Icon(CupertinoIcons.refresh, color: CupertinoColors.activeBlue),
+          child: Icon(
+            CupertinoIcons.refresh_circled,
+            color: CupertinoColors.activeBlue,
+            size: 28,
+          ),
           onPressed: () {
             setState(() => _isLoaded = false);
             fetchSignals();
           },
         ),
       ),
-      child: SafeArea(
-        child: _isLoaded
-            ? (signals.isEmpty
-            ? Center(
-          child: Text(
-            "Chưa có tín hiệu nào được tạo",
-            style: GoogleFonts.poppins(fontSize: 16),
-          ),
-        )
-            : ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: signals.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final signal = signals[index];
-            return Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {},
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: CupertinoColors.activeBlue.withOpacity(0.3),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
+      child: Stack(
+        children: [
+          SafeArea(
+            child: _isLoaded
+                ? (signals.isEmpty
+                ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    CupertinoIcons.exclamationmark_triangle,
+                    size: 60,
+                    color: CupertinoColors.systemGrey2,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        signal.message,
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: CupertinoColors.activeBlue,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Thời gian: ${formatDateTime(signal.timeAnnouncement)}",
-                        style: GoogleFonts.roboto(
-                          fontSize: 15,
-                          color: CupertinoColors.black.withOpacity(0.7),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Số lượng cảnh báo: ${signal.numberAlert}",
-                        style: GoogleFonts.roboto(
-                          fontSize: 15,
-                          color: CupertinoColors.black.withOpacity(0.7),
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 16),
+                  Text(
+                    "Chưa có tín hiệu nào được tạo",
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      color: CupertinoColors.systemGrey,
+                    ),
                   ),
-                ),
+                ],
               ),
-            );
-          },
-        ))
-            : const Center(
-          child: CupertinoActivityIndicator(
-            color: CupertinoColors.activeBlue,
+            )
+                : ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: signals.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final signal = signals[index];
+                return Dismissible(
+                  key: Key(signal.id.toString()),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemRed,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      CupertinoIcons.delete,
+                      color: Colors.white,
+                    ),
+                  ),
+                  confirmDismiss: (direction) async {
+                    return await showCupertinoDialog<bool>(
+                      context: context,
+                      builder: (context) => CupertinoAlertDialog(
+                        title: Text(
+                          "Xóa tín hiệu",
+                          style: GoogleFonts.poppins(),
+                        ),
+                        content: Text(
+                          "Bạn có chắc chắn muốn xóa tín hiệu này không?",
+                          style: GoogleFonts.poppins(),
+                        ),
+                        actions: [
+                          CupertinoDialogAction(
+                            child: const Text("Hủy"),
+                            onPressed: () =>
+                                Navigator.of(context).pop(false),
+                          ),
+                          CupertinoDialogAction(
+                            isDestructiveAction: true,
+                            child: const Text("Xóa"),
+                            onPressed: () =>
+                                Navigator.of(context).pop(true),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  onDismissed: (_) async {
+                    await deleteSignal(signal.id);
+                    setState(() => signals.removeAt(index));
+                  },
+                  child: AnimatedOpacity(
+                    opacity: 1.0,
+                    duration: const Duration(milliseconds: 300),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            CupertinoPageRoute(
+                              builder: (context) => SosDetailsScreen(id: signal.id),
+                            ),
+                          );
+                        },
+
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white,
+                                CupertinoColors.systemGrey6
+                                    .withOpacity(0.8),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: CupertinoColors.activeBlue
+                                    .withOpacity(0.2),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            signal.message,
+                                            style:
+                                            GoogleFonts.poppins(
+                                              fontSize: 18,
+                                              fontWeight:
+                                              FontWeight.w600,
+                                              color: CupertinoColors
+                                                  .activeBlue,
+                                            ),
+                                          ),
+                                        ),
+                                        Icon(
+                                          signal.active
+                                              ? CupertinoIcons
+                                              .checkmark_circle_fill
+                                              : CupertinoIcons
+                                              .xmark_circle_fill,
+                                          color: signal.active
+                                              ? CupertinoColors
+                                              .activeGreen
+                                              : CupertinoColors
+                                              .systemRed,
+                                          size: 20,
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      "Thời gian: ${formatDateTime(signal.timeAnnouncement)}",
+                                      style: GoogleFonts.roboto(
+                                        fontSize: 14,
+                                        color: CupertinoColors.black
+                                            .withOpacity(0.6),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "Số lượng cảnh báo: ${signal.numberAlert}",
+                                      style: GoogleFonts.roboto(
+                                        fontSize: 14,
+                                        color: CupertinoColors.black
+                                            .withOpacity(0.6),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ))
+                : Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  CupertinoColors.activeBlue,
+                ),
+                strokeWidth: 3,
+              ),
+            ),
           ),
-        ),
+          // Floating Action Button
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton(
+              backgroundColor: CupertinoColors.activeBlue,
+              onPressed: () {
+                // Giả định hành động tạo tín hiệu mới
+                debugPrint("Tạo tín hiệu mới");
+              },
+              child: const Icon(
+                CupertinoIcons.add,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

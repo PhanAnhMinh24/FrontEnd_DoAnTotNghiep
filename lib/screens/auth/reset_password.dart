@@ -3,6 +3,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:doantotnghiep/global/global.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email;
@@ -33,7 +34,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final url = Uri.parse("http://10.0.2.2:8088/otp/reset-password");
     final response = await http.post(
       url,
-      headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "X_token": globalFcmToken ?? '', // lấy token từ biến global
+        },
       body: jsonEncode({
         "email": widget.email,
         "verificationCode": _otpController.text,
