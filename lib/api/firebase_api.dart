@@ -28,12 +28,22 @@ class FirebaseApi {
       return;
     }
 
-    print('Navigating to /list_sos_screen');
+    // print('Navigating to /list_sos_screen');
+    print('Navigating to /sos_details');
 
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   navigatorKey.currentState?.pushNamedAndRemoveUntil(
+    //     '/list_sos_screen',
+    //         (route) => false,
+    //   );
+    // });
+    final int sosId = int.parse(message.data['sosId']!);
+    print('sosId: $sosId');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       navigatorKey.currentState?.pushNamedAndRemoveUntil(
-        '/list_sos_screen',
+        '/sos_details',
             (route) => false,
+        arguments: sosId, // truyền id tại đây
       );
     });
   }

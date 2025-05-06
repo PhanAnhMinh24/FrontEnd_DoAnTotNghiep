@@ -9,6 +9,7 @@ import 'package:doantotnghiep/screens/personal_page/personal_page_screen.dart';
 import 'package:doantotnghiep/screens/friends/friends_list_screen.dart';
 import 'package:doantotnghiep/screens/signal/signal_creation_screen.dart';
 import 'package:doantotnghiep/screens/signal/list_sos_screen.dart';
+import 'package:doantotnghiep/screens/map/map_screen.dart';
 
 class CupertinoAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback? onNotificationPressed;
@@ -153,12 +154,24 @@ class _CupertinoAppBarState extends State<CupertinoAppBar> {
                       );
                     },
                   ),
+                  CupertinoListTile(
+                    leading: const Icon(CupertinoIcons.map, color: CupertinoColors.activeBlue),
+                    title: const Text("Xem bản đồ"),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(builder: (context) => const MapScreen()),
+                      );
+                    },
+                  ),
                   const Divider(), // Đường kẻ ngăn cách
                   CupertinoListTile(
                     leading: const Icon(CupertinoIcons.clear, color: CupertinoColors.destructiveRed),
                     title: const Text("Đóng", style: TextStyle(color: CupertinoColors.destructiveRed)),
                     onTap: () => Navigator.pop(context),
                   ),
+
                 ],
               ),
             ),

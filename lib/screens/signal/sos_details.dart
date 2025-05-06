@@ -1,5 +1,8 @@
 import 'dart:convert';
+
+import 'package:animate_do/animate_do.dart';
 import 'package:doantotnghiep/global/global.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
@@ -8,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SosDetailsScreen extends StatefulWidget {
   static const String route = '/sos_details';
-  final int id; // ID của tín hiệu SOS
+  final int id;
 
   const SosDetailsScreen({Key? key, required this.id}) : super(key: key);
 
@@ -17,30 +20,26 @@ class SosDetailsScreen extends StatefulWidget {
 }
 
 class _SosDetailsScreenState extends State<SosDetailsScreen> {
-  late Map<String, dynamic> sosDetails;
+  Map<String, dynamic>? sosDetails;
   bool _isLoading = true;
+  bool _hasConfirmedSafety = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchSosDetails(widget.id); // <- Gọi API lấy dữ liệu
+    _fetchSosDetails(widget.id);
   }
 
-  // Hàm lấy chi tiết SOS từ API
   Future<void> _fetchSosDetails(int id) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('token');
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
 
     if (token == null) {
-      // Token không hợp lệ hoặc hết hạn
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text("Token không hợp lệ, vui lòng đăng nhập lại")),
-      );
+      _showError("Token không hợp lệ, vui lòng đăng nhập lại");
       return;
     }
 
-    final String apiUrl = "http://10.0.2.2:8088/api/sos-alerts/$id";
+    final apiUrl = "http://10.0.2.2:8088/api/sos-alerts/$id";
 
     try {
       final response = await http.get(
@@ -53,114 +52,206 @@ class _SosDetailsScreenState extends State<SosDetailsScreen> {
       );
 
       final Map<String, dynamic> responseData =
-          json.decode(utf8.decode(response.bodyBytes));
+      json.decode(utf8.decode(response.bodyBytes));
 
       if (response.statusCode == 200 && responseData['results'] != null) {
         setState(() {
-          sosDetails = responseData['results'] as Map<String, dynamic>;
+          sosDetails = responseData['results'];
+          _hasConfirmedSafety = sosDetails?['userConfirmed'] ?? false;
           _isLoading = false;
         });
       } else {
-        setState(() {
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text(responseData["message"] ?? "Không thể lấy dữ liệu")),
-        );
+        _showError(responseData["message"] ?? "Không thể lấy dữ liệu");
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Lỗi kết nối: $e")),
+      _showError("Lỗi kết nối: $e");
+    }
+  }
+
+  void _showError(String message) {
+    setState(() => _isLoading = false);
+    showCupertinoDialog(
+      context: context,
+      builder: (_) => CupertinoAlertDialog(
+        title: const Text("Lỗi"),
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text("Đóng"),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmSafety(int id) {
+    showCupertinoDialog(
+      context: context,
+      builder: (_) => CupertinoAlertDialog(
+        title: const Text("Xác nhận an toàn"),
+        content: const Text("Bạn có chắc chắn rằng bạn an toàn?"),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text("Hủy"),
+            onPressed: () => Navigator.pop(context),
+          ),
+          CupertinoDialogAction(
+            child: const Text("Xác nhận"),
+            onPressed: () {
+              Navigator.pop(context);
+              _sendSafetyConfirmation(id);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _sendSafetyConfirmation(int id) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) {
+      _showError("Token không hợp lệ, vui lòng đăng nhập lại");
+      return;
+    }
+
+    final apiUrl = "http://10.0.2.2:8088/api/sos-alerts/confirm/$id";
+
+    try {
+      final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+          "X_token": globalFcmToken ?? '',
+        },
       );
+
+      if (response.statusCode == 200) {
+        await _fetchSosDetails(widget.id); // Load lại dữ liệu
+
+        showCupertinoDialog(
+          context: context,
+          builder: (_) => CupertinoAlertDialog(
+            title: const Text("Thành công"),
+            content: const Text("Xác nhận an toàn đã được gửi!"),
+            actions: [
+              CupertinoDialogAction(
+                child: const Text("Đóng"),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        );
+      } else {
+        final Map<String, dynamic> responseData =
+        json.decode(utf8.decode(response.bodyBytes));
+        _showError(responseData["message"] ?? "Không thể xác nhận an toàn");
+      }
+    } catch (e) {
+      _showError("Lỗi kết nối: $e");
     }
   }
 
   @override
   Widget build(BuildContext context) {
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Chi tiết tín hiệu SOS", style: GoogleFonts.poppins()),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+    return CupertinoPageScaffold(
+      backgroundColor: CupertinoColors.white,
+      navigationBar: CupertinoNavigationBar(
+        previousPageTitle: "Quay lại",
+        middle: Text(
+          "Chi tiết tín hiệu",
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: CupertinoColors.systemBackground,
+      ),
+      child: Container(
+        color: CupertinoColors.white,
+        child: SafeArea(
+          child: _isLoading
+              ? const Center(child: CupertinoActivityIndicator(radius: 16))
+              : sosDetails == null
+              ? const Center(child: Text("Không có dữ liệu"))
+              : SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 20, vertical: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FadeInDown(
+                  duration: const Duration(milliseconds: 500),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.asset(
+                            'assets/images/sos_illustration.png',
+                            height: 140,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          "Thông tin tín hiệu SOS",
+                          style: GoogleFonts.poppins(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: CupertinoColors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                FadeInUp(
+                  duration: const Duration(milliseconds: 600),
+                  child: _buildSectionTitle("Thông tin chung"),
+                ),
+                const SizedBox(height: 12),
+                FadeInUp(
+                  duration: const Duration(milliseconds: 700),
+                  child: _buildInfoCard([
+                    buildRow("Nội dung",
+                        sosDetails!['message'] ?? '', LucideIcons.messageCircle),
+                    const Divider(height: 24),
+                    buildRow("Thời gian gửi",
+                        sosDetails!['timeAnnouncement'] ?? '', LucideIcons.clock),
+                    const Divider(height: 24),
+                    buildRow("Số cảnh báo",
+                        sosDetails!['numberAlert'].toString(), LucideIcons.alertTriangle),
+                  ]),
+                ),
+                const SizedBox(height: 28),
+                FadeInUp(
+                  duration: const Duration(milliseconds: 800),
+                  child: _buildSectionTitle("Trạng thái"),
+                ),
+                const SizedBox(height: 12),
+                FadeInUp(
+                  duration: const Duration(milliseconds: 900),
+                  child: _buildStatusCard(sosDetails!['active'] == true),
+                ),
+                const SizedBox(height: 28),
+                if (!_hasConfirmedSafety && sosDetails!['active'] == true)
+                  FadeInUp(
+                    duration: const Duration(milliseconds: 1000),
+                    child: CupertinoButton(
+                      color: CupertinoColors.activeGreen,
+                      onPressed: () {
+                        _confirmSafety(sosDetails!['id'] ?? 0);
+                      },
+                      child: const Text("Xác nhận an toàn"),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(20),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildSectionTitle("Thông tin chung"),
-                    const SizedBox(height: 10),
-                    buildRow(
-                        "ID", sosDetails['id'].toString(), LucideIcons.hash),
-                    const Divider(height: 24),
-                    buildRow("Nội dung", sosDetails['message'] ?? '',
-                        LucideIcons.messageCircle),
-                    const Divider(height: 24),
-                    buildRow(
-                        "Thời gian gửi",
-                        sosDetails['timeAnnouncement'] ?? '',
-                        LucideIcons.clock),
-                    const Divider(height: 24),
-                    buildRow(
-                        "Số cảnh báo",
-                        sosDetails['numberAlert'].toString(),
-                        LucideIcons.alertTriangle),
-                    const Divider(height: 24),
-                    _buildSectionTitle("Trạng thái"),
-                    const SizedBox(height: 10),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.easeInOut,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 18),
-                      decoration: BoxDecoration(
-                        color: (sosDetails['active'] == true)
-                            ? Colors.green.withOpacity(0.12)
-                            : Colors.red.withOpacity(0.11),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            (sosDetails['active'] == true)
-                                ? LucideIcons.checkCircle2
-                                : LucideIcons.xCircle,
-                            size: 26,
-                            color: (sosDetails['active'] == true)
-                                ? Colors.green
-                                : Colors.red,
-                          ),
-                          const SizedBox(width: 14),
-                          Text(
-                            (sosDetails['active'] == true)
-                                ? "Đang hoạt động"
-                                : "Đã ngừng",
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: (sosDetails['active'] == true)
-                                  ? Colors.green
-                                  : Colors.red,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
     );
   }
 
@@ -168,7 +259,14 @@ class _SosDetailsScreenState extends State<SosDetailsScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 22, color: Colors.blueAccent),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: CupertinoColors.activeBlue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 20, color: CupertinoColors.activeBlue),
+        ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -177,18 +275,18 @@ class _SosDetailsScreenState extends State<SosDetailsScreen> {
               Text(
                 title,
                 style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  color: Colors.grey,
+                  fontSize: 14,
+                  color: CupertinoColors.systemGrey,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 4),
               Text(
-                value,
+                value.isEmpty ? "Không có dữ liệu" : value,
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black,
+                  color: CupertinoColors.black,
                 ),
               ),
             ],
@@ -198,14 +296,82 @@ class _SosDetailsScreenState extends State<SosDetailsScreen> {
     );
   }
 
+  Widget _buildInfoCard(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: CupertinoColors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            spreadRadius: 1,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildStatusCard(bool isActive) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isActive
+            ? CupertinoColors.systemGreen.withOpacity(0.15)
+            : CupertinoColors.systemRed.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isActive
+                  ? CupertinoColors.systemGreen.withOpacity(0.3)
+                  : CupertinoColors.systemRed.withOpacity(0.3),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isActive ? LucideIcons.checkCircle2 : LucideIcons.xCircle,
+              size: 24,
+              color: isActive
+                  ? CupertinoColors.systemGreen
+                  : CupertinoColors.systemRed,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Text(
+            isActive ? "Đang hoạt động" : "Đã ngừng",
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: isActive
+                  ? CupertinoColors.systemGreen
+                  : CupertinoColors.systemRed,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
       style: GoogleFonts.poppins(
-        fontSize: 15,
-        fontWeight: FontWeight.bold,
-        color: Colors.grey[700],
-        letterSpacing: 0.2,
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        color: CupertinoColors.systemGrey2,
       ),
     );
   }
