@@ -7,6 +7,8 @@ import 'package:doantotnghiep/screens/auth/forgot_password_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:doantotnghiep/global/global.dart';
 
+import '../../api/location.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -62,6 +64,8 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Đăng nhập thành công!")),
         );
+
+        LocationService.startSendingLocation();
 
         Navigator.pushReplacement(
           context,
