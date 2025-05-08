@@ -3,8 +3,15 @@ import 'package:doantotnghiep/screens/appbar/appbar_screen.dart'; // Import AppB
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shimmer/shimmer.dart'; // Import shimmer
 
-class HomePageScreen extends StatelessWidget {
+class HomePageScreen extends StatefulWidget {
   const HomePageScreen({super.key});
+
+  @override
+  State<HomePageScreen> createState() => _HomePageScreenState();
+}
+
+class _HomePageScreenState extends State<HomePageScreen> {
+
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +41,10 @@ class HomePageScreen extends StatelessWidget {
                         ),
                         textAlign: TextAlign.center,
                       ),
-                    ).animate().fade(duration: 800.ms).slideY(begin: -0.3, end: 0, curve: Curves.easeOut),
+                    )
+                        .animate()
+                        .fade(duration: 800.ms)
+                        .slideY(begin: -0.3, end: 0, curve: Curves.easeOut),
 
                     const SizedBox(height: 15),
 
@@ -47,7 +57,10 @@ class HomePageScreen extends StatelessWidget {
                         color: Colors.grey,
                       ),
                       textAlign: TextAlign.center,
-                    ).animate().fade(duration: 1000.ms).slideY(begin: 0.2, end: 0, curve: Curves.easeOut),
+                    )
+                        .animate()
+                        .fade(duration: 1000.ms)
+                        .slideY(begin: 0.2, end: 0, curve: Curves.easeOut),
                   ],
                 ),
               ),

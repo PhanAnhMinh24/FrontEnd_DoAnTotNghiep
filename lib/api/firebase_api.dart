@@ -37,17 +37,30 @@ class FirebaseApi {
     //         (route) => false,
     //   );
     // });
-    final int sosId = int.parse(message.data['sosId']!);
-    print('sosId: $sosId');
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      navigatorKey.currentState?.pushNamedAndRemoveUntil(
-        '/sos_details',
-            (route) => false,
-        arguments: sosId, // truyền id tại đây
-      );
-    });
+    final String screenKey = message.data['screen_key']!;
+    if ('screen_sos_alert_detail'.compareTo(screenKey) == 0) {
+      final int sosId = int.parse(message.data['sosId']!);
+      print('sosId: $sosId');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(
+          '/sos_details',
+          (route) => false,
+          arguments: sosId, // truyền id tại đây
+        );
+      });
+    } else {
+      final double latitude = double.parse(message.data['latitude']!);
+      final double longitude = double.parse(message.data['longitude']!);
+      print('latitude: $latitude');
+      print('longitude: $longitude');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(
+          '/map',
+              (route) => false,
+        );
+      });
+    }
   }
-
 
   Future initPushNotification() async {
     await FirebaseMessaging.instance
